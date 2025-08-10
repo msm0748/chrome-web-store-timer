@@ -369,6 +369,20 @@
     timeEl.textContent = formatTime(ms);
   }
 
+  function updateButtonStates() {
+    if (state.isRunning) {
+      // 실행 중: 시작 버튼 비활성화, 멈춤 버튼 활성화, 초기화 버튼 숨김
+      if (startBtn) startBtn.disabled = true;
+      if (pauseBtn) pauseBtn.disabled = false;
+      if (resetBtn) resetBtn.style.visibility = 'hidden';
+    } else {
+      // 멈춤 상태: 시작 버튼 활성화, 멈춤 버튼 비활성화, 초기화 버튼 보임
+      if (startBtn) startBtn.disabled = false;
+      if (pauseBtn) pauseBtn.disabled = true;
+      if (resetBtn) resetBtn.style.visibility = 'visible';
+    }
+  }
+
   function tick() {
     renderTime();
     rafId = window.requestAnimationFrame(tick);
@@ -377,8 +391,7 @@
   function start() {
     if (state.isRunning) return;
     saveState({ isRunning: true, lastStartAt: Date.now() });
-    startBtn.disabled = true;
-    pauseBtn.disabled = false;
+    updateButtonStates();
     if (rafId == null) rafId = window.requestAnimationFrame(tick);
   }
 
@@ -391,8 +404,7 @@
       elapsedMs: state.elapsedMs + added,
       lastStartAt: null,
     });
-    startBtn.disabled = false;
-    pauseBtn.disabled = true;
+    updateButtonStates();
     if (rafId != null) {
       window.cancelAnimationFrame(rafId);
       rafId = null;
@@ -403,6 +415,7 @@
   function reset() {
     const running = state.isRunning;
     saveState({ elapsedMs: 0, lastStartAt: running ? Date.now() : null });
+    updateButtonStates();
     renderTime();
   }
 
@@ -582,6 +595,7 @@
           const { x, y, width, height } = state;
           state = { ...state, ...newState, x, y, width, height };
           renderTime();
+          updateButtonStates();
         }
 
         switch (action) {
@@ -616,12 +630,10 @@
       // ensure lastStartAt is present
       const last = state.lastStartAt ?? Date.now();
       saveState({ lastStartAt: last });
-      if (startBtn) startBtn.disabled = true;
-      if (pauseBtn) pauseBtn.disabled = false;
+      updateButtonStates();
       rafId = window.requestAnimationFrame(tick);
     } else {
-      if (startBtn) startBtn.disabled = false;
-      if (pauseBtn) pauseBtn.disabled = true;
+      updateButtonStates();
       renderTime();
     }
   });
