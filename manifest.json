@@ -8,8 +8,7 @@
     "default_title": "Toggle Overlay Timer",
     "default_icon": {
       "128": "icons/icon-128.png"
-    },
-    "default_popup": "popup.html"
+    }
   },
   "background": {
     "service_worker": "scripts/background.js"
