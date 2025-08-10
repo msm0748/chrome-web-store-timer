@@ -94,12 +94,12 @@
       display: flex;
       flex-direction: column;
       border-radius: 14px;
-      background: rgba(255,255,255,0.12);
-      border: 1px solid rgba(255,255,255,0.25);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-      backdrop-filter: saturate(140%) blur(14px);
-      -webkit-backdrop-filter: saturate(140%) blur(14px);
-      color: #fff;
+      background: rgba(17, 24, 39, 0.86); /* dark backdrop for contrast */
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.45);
+      backdrop-filter: saturate(140%) blur(10px);
+      -webkit-backdrop-filter: saturate(140%) blur(10px);
+      color: #F9FAFB;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
       overflow: hidden;
       pointer-events: auto;
@@ -113,8 +113,8 @@
       padding: 0 10px;
       cursor: move;
       user-select: none;
-      background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08));
-      border-bottom: 1px solid rgba(255,255,255,0.12);
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      border-bottom: 1px solid rgba(255,255,255,0.08);
       pointer-events: auto;
       position: relative;
       z-index: 10;
@@ -133,46 +133,48 @@
       justify-content: center;
       font-variant-numeric: tabular-nums;
       font-weight: 700;
-      font-size: 28px;
-      letter-spacing: 1px;
-      text-shadow: 0 1px 0 rgba(0,0,0,0.4);
+      font-size: 34px;
+      letter-spacing: 0.5px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.6);
     }
 
     .controls {
       display: flex;
-      gap: 8px;
-      padding: 10px;
+      gap: 10px;
+      padding: 12px;
       justify-content: center;
     }
 
     .btn {
       appearance: none;
-      border: none;
+      border: 1px solid rgba(255,255,255,0.1);
       outline: none;
-      padding: 8px 12px;
-      min-width: 70px;
+      padding: 9px 14px;
+      min-width: 80px;
       border-radius: 10px;
-      color: #0b1220;
-      font-weight: 600;
-      font-size: 12.5px;
-      background: linear-gradient(180deg, #ffffff, #dfe8ff);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 6px 14px rgba(0,0,0,0.18);
+      color: #F9FAFB;
+      font-weight: 700;
+      font-size: 13px;
+      background: linear-gradient(180deg, #374151, #1F2937);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.25);
       cursor: pointer;
-      transition: transform .06s ease, box-shadow .12s ease, opacity .15s ease;
+      transition: transform .08s ease, box-shadow .12s ease, opacity .15s ease, filter .12s ease;
       pointer-events: auto;
       position: relative;
       z-index: 5;
     }
-    .btn:hover { transform: translateY(-1px); }
-    .btn:active { transform: translateY(0); box-shadow: inset 0 1px 0 rgba(0,0,0,0.12); }
+    .btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
+    .btn:active { transform: translateY(0); filter: brightness(0.98); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
 
     .btn.primary {
-      background: linear-gradient(180deg, #7dd3fc, #60a5fa);
-      color: #0b1220;
+      background: linear-gradient(180deg, #3B82F6, #2563EB);
+      border-color: rgba(59,130,246,0.6);
+      color: #FFFFFF;
     }
     .btn.warn {
-      background: linear-gradient(180deg, #fecaca, #fca5a5);
-      color: #3b0d0d;
+      background: linear-gradient(180deg, #EF4444, #DC2626);
+      border-color: rgba(239,68,68,0.6);
+      color: #FFFFFF;
     }
 
     .resize {
@@ -181,8 +183,8 @@
       right: 4px; bottom: 4px;
       border-radius: 3px;
       cursor: nwse-resize;
-      background: linear-gradient(135deg, rgba(255,255,255,0.6), rgba(255,255,255,0.12));
-      box-shadow: inset -1px -1px 0 rgba(0,0,0,0.15);
+      background: linear-gradient(135deg, rgba(255,255,255,0.65), rgba(255,255,255,0.22));
+      box-shadow: inset -1px -1px 0 rgba(0,0,0,0.25);
       pointer-events: auto;
       z-index: 5;
     }
@@ -216,16 +218,6 @@
   const resetBtn = wrap.querySelector('#reset');
   const resizeHandle = wrap.querySelector('#resize');
 
-  // Debug: Check if elements are found
-  console.log('Overlay Timer: DOM elements found:', {
-    titleBar: !!titleBar,
-    timeEl: !!timeEl,
-    startBtn: !!startBtn,
-    pauseBtn: !!pauseBtn,
-    resetBtn: !!resetBtn,
-    resizeHandle: !!resizeHandle,
-  });
-
   function updatePositionAndSize() {
     host.style.left = state.x + 'px';
     host.style.top = state.y + 'px';
@@ -256,7 +248,6 @@
 
   function start() {
     if (state.isRunning) return;
-    console.log('Timer started');
     saveState({ isRunning: true, lastStartAt: Date.now() });
     startBtn.disabled = true;
     pauseBtn.disabled = false;
@@ -265,7 +256,6 @@
 
   function pause() {
     if (!state.isRunning) return;
-    console.log('Timer paused');
     const now = Date.now();
     const added = state.lastStartAt ? now - state.lastStartAt : 0;
     saveState({
@@ -283,7 +273,6 @@
   }
 
   function reset() {
-    console.log('Timer reset');
     const running = state.isRunning;
     saveState({ elapsedMs: 0, lastStartAt: running ? Date.now() : null });
     renderTime();
@@ -310,7 +299,6 @@
     }
     function onMouseUp(e) {
       if (!dragging) return;
-      console.log('Drag ended');
       dragging = false;
       saveState({ x: state.x, y: state.y });
       window.removeEventListener('mousemove', onMouseMove, true);
@@ -326,7 +314,6 @@
         'mousedown',
         (e) => {
           if (e.button !== 0) return;
-          console.log('Drag started');
           dragging = true;
           startX = e.clientX;
           startY = e.clientY;
@@ -375,7 +362,6 @@
         'mousedown',
         (e) => {
           if (e.button !== 0) return;
-          console.log('Resize started');
           resizing = true;
           startX = e.clientX;
           startY = e.clientY;
@@ -396,7 +382,6 @@
     const startHandler = (e) => {
       e.preventDefault();
       e.stopPropagation();
-      console.log('Start button clicked');
       start();
     };
     startBtn.addEventListener('click', startHandler);
@@ -410,7 +395,6 @@
     const pauseHandler = (e) => {
       e.preventDefault();
       e.stopPropagation();
-      console.log('Pause button clicked');
       pause();
     };
     pauseBtn.addEventListener('click', pauseHandler);
@@ -424,7 +408,6 @@
     const resetHandler = (e) => {
       e.preventDefault();
       e.stopPropagation();
-      console.log('Reset button clicked');
       reset();
     };
     resetBtn.addEventListener('click', resetHandler);
@@ -493,12 +476,11 @@
   } catch {}
 
   // Initialize
-  console.log('Overlay Timer: Initializing...');
+
   loadState().then(() => {
-    console.log('Overlay Timer: State loaded', state);
     updatePositionAndSize();
     updateVisibility();
-    console.log('Overlay Timer: Position and visibility updated');
+
     if (state.isRunning) {
       // ensure lastStartAt is present
       const last = state.lastStartAt ?? Date.now();
@@ -506,19 +488,10 @@
       if (startBtn) startBtn.disabled = true;
       if (pauseBtn) pauseBtn.disabled = false;
       rafId = window.requestAnimationFrame(tick);
-      console.log('Overlay Timer: Running state restored');
     } else {
       if (startBtn) startBtn.disabled = false;
       if (pauseBtn) pauseBtn.disabled = true;
       renderTime();
-      console.log('Overlay Timer: Stopped state restored');
     }
-
-    // Final check - log button states
-    console.log('Button states:', {
-      startDisabled: startBtn?.disabled,
-      pauseDisabled: pauseBtn?.disabled,
-      overlayVisible: overlayEnabled,
-    });
   });
 })();
