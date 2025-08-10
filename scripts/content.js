@@ -7,8 +7,8 @@
   const defaultState = {
     x: 24,
     y: 24,
-    width: 260,
-    height: 140,
+    width: 340,
+    height: 180,
     isRunning: false,
     elapsedMs: 0,
     lastStartAt: null,
@@ -21,8 +21,8 @@
   function clampToViewport(x, y, width, height) {
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const clampedX = Math.max(0, Math.min(x, vw - Math.max(160, width)));
-    const clampedY = Math.max(0, Math.min(y, vh - Math.max(100, height)));
+    const clampedX = Math.max(0, Math.min(x, vw - Math.max(340, width)));
+    const clampedY = Math.max(0, Math.min(y, vh - Math.max(180, height)));
     return { x: clampedX, y: clampedY };
   }
 
@@ -88,42 +88,95 @@
   const style = document.createElement('style');
   style.textContent = `
     :host, * { box-sizing: border-box; }
+    
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 12px 32px rgba(0,0,0,0.45), 0 0 20px rgba(59,130,246,0.1); }
+      50% { box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 30px rgba(59,130,246,0.15); }
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
+    }
+    
+    @keyframes shimmer {
+      0% { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+    
     .timer-wrap {
       position: absolute;
       left: 0; top: 0; right: 0; bottom: 0;
       display: flex;
       flex-direction: column;
-      border-radius: 14px;
-      background: rgba(17, 24, 39, 0.86); /* dark backdrop for contrast */
-      border: 1px solid rgba(255,255,255,0.08);
-      box-shadow: 0 12px 32px rgba(0,0,0,0.45);
-      backdrop-filter: saturate(140%) blur(10px);
-      -webkit-backdrop-filter: saturate(140%) blur(10px);
+      border-radius: 18px;
+      background: linear-gradient(135deg, 
+        rgba(17, 24, 39, 0.95) 0%, 
+        rgba(30, 41, 59, 0.92) 50%, 
+        rgba(17, 24, 39, 0.95) 100%);
+      border: 1px solid rgba(255,255,255,0.12);
+      backdrop-filter: saturate(180%) blur(16px);
+      -webkit-backdrop-filter: saturate(180%) blur(16px);
       color: #F9FAFB;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
       overflow: hidden;
       pointer-events: auto;
+      animation: glow 3s ease-in-out infinite;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .timer-wrap::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(135deg, 
+        rgba(59, 130, 246, 0.05) 0%, 
+        rgba(16, 185, 129, 0.03) 50%, 
+        rgba(139, 92, 246, 0.05) 100%);
+      border-radius: inherit;
+      pointer-events: none;
     }
 
     .title-bar {
-      height: 36px;
+      height: 40px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 10px;
+      padding: 0 14px;
       cursor: move;
       user-select: none;
-      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
-      border-bottom: 1px solid rgba(255,255,255,0.08);
+      background: linear-gradient(135deg, 
+        rgba(255,255,255,0.08) 0%, 
+        rgba(255,255,255,0.04) 50%, 
+        rgba(255,255,255,0.02) 100%);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      border-top-left-radius: 18px;
+      border-top-right-radius: 18px;
       pointer-events: auto;
       position: relative;
       z-index: 10;
     }
+    
+    .title-bar::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%; right: -100%; bottom: 0;
+      background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255,255,255,0.1), 
+        transparent);
+      animation: shimmer 3s ease-in-out infinite;
+    }
+    
     .title {
       font-weight: 600;
-      letter-spacing: 0.2px;
-      font-size: 12.5px;
-      opacity: 0.9;
+      letter-spacing: 0.3px;
+      font-size: 13px;
+      opacity: 0.95;
+      background: linear-gradient(135deg, #3B82F6, #06B6D4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .time {
@@ -132,61 +185,136 @@
       align-items: center;
       justify-content: center;
       font-variant-numeric: tabular-nums;
-      font-weight: 700;
-      font-size: 34px;
-      letter-spacing: 0.5px;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+      font-weight: 800;
+      font-size: 36px;
+      letter-spacing: 1px;
+      background: linear-gradient(135deg, #FFFFFF 0%, #E5E7EB 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.3);
+      position: relative;
+      padding: 20px 0;
+    }
+    
+    .time::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 120%; height: 120%;
+      background: radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+      animation: pulse 2s ease-in-out infinite;
     }
 
     .controls {
       display: flex;
-      gap: 10px;
-      padding: 12px;
+      gap: 12px;
+      padding: 16px;
       justify-content: center;
+      background: linear-gradient(180deg, 
+        rgba(255,255,255,0.02) 0%, 
+        rgba(255,255,255,0.05) 100%);
+      border-bottom-left-radius: 18px;
+      border-bottom-right-radius: 18px;
     }
 
     .btn {
       appearance: none;
-      border: 1px solid rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
       outline: none;
-      padding: 9px 14px;
-      min-width: 80px;
-      border-radius: 10px;
+      padding: 11px 16px;
+      min-width: 85px;
+      border-radius: 12px;
       color: #F9FAFB;
       font-weight: 700;
       font-size: 13px;
-      background: linear-gradient(180deg, #374151, #1F2937);
-      box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+      background: linear-gradient(135deg, #374151 0%, #1F2937 100%);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3), 
+                  inset 0 1px 0 rgba(255,255,255,0.1);
       cursor: pointer;
-      transition: transform .08s ease, box-shadow .12s ease, opacity .15s ease, filter .12s ease;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       pointer-events: auto;
       position: relative;
       z-index: 5;
+      overflow: hidden;
     }
-    .btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
-    .btn:active { transform: translateY(0); filter: brightness(0.98); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%; right: -100%; bottom: 0;
+      background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255,255,255,0.15), 
+        transparent);
+      transition: left 0.5s ease;
+    }
+    
+    .btn:hover::before {
+      left: 100%;
+    }
+    
+    .btn:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 12px 28px rgba(0,0,0,0.4), 
+                  inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+    
+    .btn:active { 
+      transform: translateY(-1px); 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3); 
+    }
 
     .btn.primary {
-      background: linear-gradient(180deg, #3B82F6, #2563EB);
-      border-color: rgba(59,130,246,0.6);
+      background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+      border-color: rgba(59,130,246,0.8);
       color: #FFFFFF;
+      box-shadow: 0 8px 20px rgba(59,130,246,0.3), 
+                  inset 0 1px 0 rgba(255,255,255,0.2);
     }
+    
+    .btn.primary:hover {
+      box-shadow: 0 12px 28px rgba(59,130,246,0.4), 
+                  inset 0 1px 0 rgba(255,255,255,0.3);
+    }
+    
     .btn.warn {
-      background: linear-gradient(180deg, #EF4444, #DC2626);
-      border-color: rgba(239,68,68,0.6);
+      background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+      border-color: rgba(239,68,68,0.8);
       color: #FFFFFF;
+      box-shadow: 0 8px 20px rgba(239,68,68,0.3), 
+                  inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+    
+    .btn.warn:hover {
+      box-shadow: 0 12px 28px rgba(239,68,68,0.4), 
+                  inset 0 1px 0 rgba(255,255,255,0.3);
     }
 
     .resize {
       position: absolute;
-      width: 14px; height: 14px;
-      right: 4px; bottom: 4px;
-      border-radius: 3px;
+      width: 16px; height: 16px;
+      right: 6px; bottom: 6px;
+      border-radius: 4px;
       cursor: nwse-resize;
-      background: linear-gradient(135deg, rgba(255,255,255,0.65), rgba(255,255,255,0.22));
-      box-shadow: inset -1px -1px 0 rgba(0,0,0,0.25);
+      background: linear-gradient(135deg, 
+        rgba(255,255,255,0.8) 0%, 
+        rgba(255,255,255,0.4) 100%);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2), 
+                  inset -1px -1px 0 rgba(0,0,0,0.1);
       pointer-events: auto;
       z-index: 5;
+      transition: all 0.2s ease;
+    }
+    
+    .resize:hover {
+      background: linear-gradient(135deg, 
+        rgba(255,255,255,0.9) 0%, 
+        rgba(255,255,255,0.6) 100%);
+      transform: scale(1.1);
     }
   `;
 
@@ -343,8 +471,11 @@
       e.stopPropagation();
       const dw = e.clientX - startX;
       const dh = e.clientY - startY;
-      const minW = 220,
-        minH = 120;
+      // 최소 크기: 버튼들이 잘리지 않도록 충분한 공간 확보
+      // 너비: 버튼 3개(85px each) + 간격(12px * 2) + 패딩(16px * 2) = 340px
+      // 높이: 제목바(40px) + 시간표시(60px) + 버튼영역(60px) = 180px
+      const minW = 340,
+        minH = 180;
       state.width = Math.max(minW, baseW + dw);
       state.height = Math.max(minH, baseH + dh);
       updatePositionAndSize();
