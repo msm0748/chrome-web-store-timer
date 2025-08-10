@@ -159,6 +159,9 @@
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 6px 14px rgba(0,0,0,0.18);
       cursor: pointer;
       transition: transform .06s ease, box-shadow .12s ease, opacity .15s ease;
+      pointer-events: auto;
+      position: relative;
+      z-index: 5;
     }
     .btn:hover { transform: translateY(-1px); }
     .btn:active { transform: translateY(0); box-shadow: inset 0 1px 0 rgba(0,0,0,0.12); }
@@ -180,6 +183,8 @@
       cursor: nwse-resize;
       background: linear-gradient(135deg, rgba(255,255,255,0.6), rgba(255,255,255,0.12));
       box-shadow: inset -1px -1px 0 rgba(0,0,0,0.15);
+      pointer-events: auto;
+      z-index: 5;
     }
   `;
 
@@ -211,6 +216,16 @@
   const resetBtn = wrap.querySelector('#reset');
   const resizeHandle = wrap.querySelector('#resize');
 
+  // Debug: Check if elements are found
+  console.log('Overlay Timer: DOM elements found:', {
+    titleBar: !!titleBar,
+    timeEl: !!timeEl,
+    startBtn: !!startBtn,
+    pauseBtn: !!pauseBtn,
+    resetBtn: !!resetBtn,
+    resizeHandle: !!resizeHandle,
+  });
+
   function updatePositionAndSize() {
     host.style.left = state.x + 'px';
     host.style.top = state.y + 'px';
@@ -220,6 +235,7 @@
 
   function updateVisibility() {
     host.style.display = overlayEnabled ? 'block' : 'none';
+    host.style.pointerEvents = overlayEnabled ? 'auto' : 'none';
   }
 
   function computeNowElapsed() {
@@ -305,23 +321,25 @@
       }
     }
 
-    titleBar.addEventListener(
-      'mousedown',
-      (e) => {
-        if (e.button !== 0) return;
-        console.log('Drag started');
-        dragging = true;
-        startX = e.clientX;
-        startY = e.clientY;
-        baseX = state.x;
-        baseY = state.y;
-        window.addEventListener('mousemove', onMouseMove, true);
-        window.addEventListener('mouseup', onMouseUp, true);
-        e.preventDefault();
-        e.stopPropagation();
-      },
-      true
-    );
+    if (titleBar) {
+      titleBar.addEventListener(
+        'mousedown',
+        (e) => {
+          if (e.button !== 0) return;
+          console.log('Drag started');
+          dragging = true;
+          startX = e.clientX;
+          startY = e.clientY;
+          baseX = state.x;
+          baseY = state.y;
+          window.addEventListener('mousemove', onMouseMove, true);
+          window.addEventListener('mouseup', onMouseUp, true);
+          e.preventDefault();
+          e.stopPropagation();
+        },
+        true
+      );
+    }
   })();
 
   // Resize
@@ -334,6 +352,8 @@
 
     function onMouseMove(e) {
       if (!resizing) return;
+      e.preventDefault();
+      e.stopPropagation();
       const dw = e.clientX - startX;
       const dh = e.clientY - startY;
       const minW = 220,
@@ -350,47 +370,71 @@
       window.removeEventListener('mouseup', onMouseUp, true);
     }
 
-    resizeHandle.addEventListener(
-      'mousedown',
-      (e) => {
-        if (e.button !== 0) return;
-        resizing = true;
-        startX = e.clientX;
-        startY = e.clientY;
-        baseW = state.width;
-        baseH = state.height;
-        window.addEventListener('mousemove', onMouseMove, true);
-        window.addEventListener('mouseup', onMouseUp, true);
-        e.preventDefault();
-        e.stopPropagation();
-      },
-      true
-    );
+    if (resizeHandle) {
+      resizeHandle.addEventListener(
+        'mousedown',
+        (e) => {
+          if (e.button !== 0) return;
+          console.log('Resize started');
+          resizing = true;
+          startX = e.clientX;
+          startY = e.clientY;
+          baseW = state.width;
+          baseH = state.height;
+          window.addEventListener('mousemove', onMouseMove, true);
+          window.addEventListener('mouseup', onMouseUp, true);
+          e.preventDefault();
+          e.stopPropagation();
+        },
+        true
+      );
+    }
   })();
 
-  // Controls
-  startBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log('Start button clicked');
-    start();
-  });
-  pauseBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log('Pause button clicked');
-    pause();
-  });
-  resetBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log('Reset button clicked');
-    reset();
-  });
+  // Controls - Multiple event types for better compatibility
+  if (startBtn) {
+    const startHandler = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Start button clicked');
+      start();
+    };
+    startBtn.addEventListener('click', startHandler);
+    startBtn.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+  }
 
-  // Prevent clicks from leaking to page
-  wrap.addEventListener('mousedown', (e) => e.stopPropagation(), true);
-  wrap.addEventListener('click', (e) => e.stopPropagation(), true);
+  if (pauseBtn) {
+    const pauseHandler = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Pause button clicked');
+      pause();
+    };
+    pauseBtn.addEventListener('click', pauseHandler);
+    pauseBtn.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+  }
+
+  if (resetBtn) {
+    const resetHandler = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Reset button clicked');
+      reset();
+    };
+    resetBtn.addEventListener('click', resetHandler);
+    resetBtn.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+  }
+
+  // Note: Avoid globally stopping propagation here to keep internal handlers working reliably
 
   // Message handling for popup and background
   try {
@@ -459,15 +503,22 @@
       // ensure lastStartAt is present
       const last = state.lastStartAt ?? Date.now();
       saveState({ lastStartAt: last });
-      startBtn.disabled = true;
-      pauseBtn.disabled = false;
+      if (startBtn) startBtn.disabled = true;
+      if (pauseBtn) pauseBtn.disabled = false;
       rafId = window.requestAnimationFrame(tick);
       console.log('Overlay Timer: Running state restored');
     } else {
-      startBtn.disabled = false;
-      pauseBtn.disabled = true;
+      if (startBtn) startBtn.disabled = false;
+      if (pauseBtn) pauseBtn.disabled = true;
       renderTime();
       console.log('Overlay Timer: Stopped state restored');
     }
+
+    // Final check - log button states
+    console.log('Button states:', {
+      startDisabled: startBtn?.disabled,
+      pauseDisabled: pauseBtn?.disabled,
+      overlayVisible: overlayEnabled,
+    });
   });
 })();
