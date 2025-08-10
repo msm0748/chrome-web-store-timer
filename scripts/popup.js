@@ -14,7 +14,7 @@ const defaultState = {
 
 let state = { ...defaultState };
 let rafId = null;
-let overlayEnabled = true;
+let overlayEnabled = false;
 
 // DOM elements
 const timeEl = document.getElementById('time');
@@ -140,6 +140,59 @@ async function notifyContentScript(action) {
   }
 }
 
+async function syncWithOverlay() {
+  try {
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (tab?.id) {
+      const response = await chrome.tabs.sendMessage(tab.id, {
+        type: 'GET_OVERLAY_STATE',
+      });
+      if (response && response.state) {
+        // Only sync timer state, not position/size
+        const { isRunning, elapsedMs, lastStartAt } = response.state;
+        let needsUpdate = false;
+
+        if (isRunning !== state.isRunning) {
+          state.isRunning = isRunning;
+          needsUpdate = true;
+
+          // Update animation frame
+          if (isRunning && rafId === null) {
+            rafId = window.requestAnimationFrame(tick);
+          } else if (!isRunning && rafId !== null) {
+            window.cancelAnimationFrame(rafId);
+            rafId = null;
+          }
+        }
+
+        if (
+          elapsedMs !== state.elapsedMs ||
+          lastStartAt !== state.lastStartAt
+        ) {
+          state.elapsedMs = elapsedMs;
+          state.lastStartAt = lastStartAt;
+          needsUpdate = true;
+        }
+
+        if (overlayEnabled !== response.overlayEnabled) {
+          overlayEnabled = response.overlayEnabled;
+          needsUpdate = true;
+        }
+
+        if (needsUpdate) {
+          updateUI();
+          renderTime();
+        }
+      }
+    }
+  } catch {
+    // Content script not available
+  }
+}
+
 async function toggleOverlay() {
   try {
     const [tab] = await chrome.tabs.query({
@@ -180,4 +233,10 @@ loadState().then(() => {
   } else {
     renderTime();
   }
+
+  // Sync with overlay on popup open
+  syncWithOverlay();
+
+  // Set up periodic sync every 500ms
+  setInterval(syncWithOverlay, 500);
 });

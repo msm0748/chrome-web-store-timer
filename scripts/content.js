@@ -16,7 +16,7 @@
 
   let state = { ...defaultState };
   let rafId = null;
-  let overlayEnabled = true; // visible by default; toggled via extension action
+  let overlayEnabled = false; // hidden by default; toggled via extension action
 
   function clampToViewport(x, y, width, height) {
     const vw = window.innerWidth;
@@ -75,8 +75,8 @@
   host.id = 'overlay-timer-root';
   host.style.position = 'fixed';
   host.style.zIndex = '2147483647';
-  host.style.left = '0px';
-  host.style.top = '0px';
+  host.style.left = defaultState.x + 'px';
+  host.style.top = defaultState.y + 'px';
   host.style.width = defaultState.width + 'px';
   host.style.height = defaultState.height + 'px';
   // Allow pointer interactions for drag/resize/buttons
@@ -115,6 +115,9 @@
       user-select: none;
       background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08));
       border-bottom: 1px solid rgba(255,255,255,0.12);
+      pointer-events: auto;
+      position: relative;
+      z-index: 10;
     }
     .title {
       font-weight: 600;
@@ -237,6 +240,7 @@
 
   function start() {
     if (state.isRunning) return;
+    console.log('Timer started');
     saveState({ isRunning: true, lastStartAt: Date.now() });
     startBtn.disabled = true;
     pauseBtn.disabled = false;
@@ -245,6 +249,7 @@
 
   function pause() {
     if (!state.isRunning) return;
+    console.log('Timer paused');
     const now = Date.now();
     const added = state.lastStartAt ? now - state.lastStartAt : 0;
     saveState({
@@ -262,6 +267,7 @@
   }
 
   function reset() {
+    console.log('Timer reset');
     const running = state.isRunning;
     saveState({ elapsedMs: 0, lastStartAt: running ? Date.now() : null });
     renderTime();
@@ -277,6 +283,8 @@
 
     function onMouseMove(e) {
       if (!dragging) return;
+      e.preventDefault();
+      e.stopPropagation();
       const nx = baseX + (e.clientX - startX);
       const ny = baseY + (e.clientY - startY);
       const clamped = clampToViewport(nx, ny, state.width, state.height);
@@ -284,18 +292,24 @@
       state.y = clamped.y;
       updatePositionAndSize();
     }
-    function onMouseUp() {
+    function onMouseUp(e) {
       if (!dragging) return;
+      console.log('Drag ended');
       dragging = false;
       saveState({ x: state.x, y: state.y });
       window.removeEventListener('mousemove', onMouseMove, true);
       window.removeEventListener('mouseup', onMouseUp, true);
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
     }
 
     titleBar.addEventListener(
       'mousedown',
       (e) => {
         if (e.button !== 0) return;
+        console.log('Drag started');
         dragging = true;
         startX = e.clientX;
         startY = e.clientY;
@@ -356,15 +370,21 @@
 
   // Controls
   startBtn.addEventListener('click', (e) => {
+    e.preventDefault();
     e.stopPropagation();
+    console.log('Start button clicked');
     start();
   });
   pauseBtn.addEventListener('click', (e) => {
+    e.preventDefault();
     e.stopPropagation();
+    console.log('Pause button clicked');
     pause();
   });
   resetBtn.addEventListener('click', (e) => {
+    e.preventDefault();
     e.stopPropagation();
+    console.log('Reset button clicked');
     reset();
   });
 
@@ -386,13 +406,24 @@
         return true;
       }
 
+      if (message.type === 'GET_OVERLAY_STATE') {
+        try {
+          sendResponse?.({
+            state: { ...state },
+            overlayEnabled,
+          });
+        } catch {}
+        return true;
+      }
+
       if (message.type === 'TIMER_ACTION') {
         const { action, state: newState } = message;
 
-        // Sync state from popup
+        // Sync state from popup - but preserve position/size
         if (newState) {
-          state = { ...state, ...newState };
-          updatePositionAndSize();
+          const { x, y, width, height } = state;
+          state = { ...state, ...newState, x, y, width, height };
+          renderTime();
         }
 
         switch (action) {
@@ -418,9 +449,12 @@
   } catch {}
 
   // Initialize
+  console.log('Overlay Timer: Initializing...');
   loadState().then(() => {
+    console.log('Overlay Timer: State loaded', state);
     updatePositionAndSize();
     updateVisibility();
+    console.log('Overlay Timer: Position and visibility updated');
     if (state.isRunning) {
       // ensure lastStartAt is present
       const last = state.lastStartAt ?? Date.now();
@@ -428,10 +462,12 @@
       startBtn.disabled = true;
       pauseBtn.disabled = false;
       rafId = window.requestAnimationFrame(tick);
+      console.log('Overlay Timer: Running state restored');
     } else {
       startBtn.disabled = false;
       pauseBtn.disabled = true;
       renderTime();
+      console.log('Overlay Timer: Stopped state restored');
     }
   });
 })();
