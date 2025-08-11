@@ -80,7 +80,9 @@
   host.style.width = defaultState.width + 'px';
   host.style.height = defaultState.height + 'px';
   // Allow pointer interactions for drag/resize/buttons
-  host.style.pointerEvents = 'auto';
+  host.style.pointerEvents = 'none';
+  // Start fully hidden to avoid initial flash before state/visibility is applied
+  host.style.display = 'none';
   document.documentElement.appendChild(host);
 
   const shadow = host.attachShadow({ mode: 'open' });
