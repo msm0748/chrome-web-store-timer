@@ -318,6 +318,38 @@
         rgba(255,255,255,0.6) 100%);
       transform: scale(1.1);
     }
+    
+    .close-btn {
+      appearance: none;
+      border: none;
+      outline: none;
+      background: rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.8);
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 1;
+      transition: all 0.2s ease;
+      pointer-events: auto;
+      z-index: 10;
+      position: relative;
+    }
+    
+    .close-btn:hover {
+      background: rgba(239,68,68,0.8);
+      color: #FFFFFF;
+      transform: scale(1.1);
+    }
+    
+    .close-btn:active {
+      transform: scale(0.95);
+    }
   `;
 
   const wrap = document.createElement('div');
@@ -325,8 +357,11 @@
   wrap.innerHTML = `
     <div class="title-bar">
       <div class="title">Overlay Timer</div>
-      <div style="display:flex; gap:6px; align-items:center; opacity:.8; font-size:11px;">
-        드래그로 이동 · 모서리로 리사이즈
+      <div style="display:flex; gap:8px; align-items:center;">
+        <div style="opacity:.8; font-size:11px;">
+          드래그로 이동 · 모서리로 리사이즈
+        </div>
+        <button class="close-btn" id="close" title="오버레이 닫기">×</button>
       </div>
     </div>
     <div class="time" id="time">00:00:00</div>
@@ -347,6 +382,7 @@
   const pauseBtn = wrap.querySelector('#pause');
   const resetBtn = wrap.querySelector('#reset');
   const resizeHandle = wrap.querySelector('#resize');
+  const closeBtn = wrap.querySelector('#close');
 
   function updatePositionAndSize() {
     host.style.left = state.x + 'px';
@@ -558,6 +594,20 @@
     };
     resetBtn.addEventListener('click', resetHandler);
     resetBtn.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+  }
+
+  if (closeBtn) {
+    const closeHandler = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      overlayEnabled = false;
+      updateVisibility();
+    };
+    closeBtn.addEventListener('click', closeHandler);
+    closeBtn.addEventListener('mousedown', (e) => {
       e.preventDefault();
       e.stopPropagation();
     });
