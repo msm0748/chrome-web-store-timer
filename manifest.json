@@ -3,7 +3,7 @@
   "name": "Overlay Timer",
   "description": "드래그/리사이즈 가능한 오버레이 타이머 (시작/멈춤/초기화)",
   "version": "1.0.0",
-  "permissions": ["storage"],
+  "permissions": ["storage", "scripting", "activeTab"],
   "action": {
     "default_title": "Toggle Overlay Timer",
     "default_icon": {
@@ -15,12 +15,5 @@
   },
   "icons": {
     "128": "icons/icon-128.png"
-  },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["scripts/content.js"],
-      "run_at": "document_idle"
-    }
-  ]
+  }
 }
